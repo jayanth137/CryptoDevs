@@ -4,25 +4,63 @@
 // You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
-const hre = require("hardhat");
+const hre = require('hardhat');
+
+async function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  // Deploy the NFT Contract
 
-  const lockedAmount = hre.ethers.parseEther("0.001");
+  const nftContract = await hre.ethers.deployContract('CryptoDevsNFT');
+  await nftContract.deployed();
+  console.log('CryptoDevsNFT deployed to:', nftContract.target);
 
-  const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
+  // Deploy the fake Marketplace Contract
+  const fakeMarketplaceContract = await hre.ethers.deployContract(
+    'FakeMarketplace'
+  );
+  await fakeMarketplaceContract.deployed();
+  console.log('FakeMarketplace deployed to:', fakeMarketplaceContract.target);
+
+  // Deploy the DAO Contract
+  const amount = hre.ethers.parseEther('1');
+
+  const daoContract = await hre.ethers.deployContract(
+    'DAO',
+    [fakeMarketplaceContract.target, nftContract.target],
+    { value: amount }
+  );
+  await daoContract.deployed();
+  console.log('DAO deployed to:', daoContract.target);
+
+  // Sleep for 30 seconds to let Etherscan catch up with the deployments
+  console.log('Sleeping for 30 seconds...');
+  await sleep(3 * 1000);
+
+  // Verify the NFT Contract
+  await hre.run('verify:verify', {
+    address: nftContract.target,
+    constructorArguments: [],
   });
 
-  await lock.waitForDeployment();
+  // Verify the Marketplace Contract
+  await hre.run('verify:verify', {
+    address: fakeMarketplaceContract.target,
+    constructorArguments: [],
+  });
 
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  );
+  // Verify the DAO Contract
+  await hre.run('verify:verify', {
+    address: daoContract.target,
+    constructorArguments: [
+      fakeNftMarketplaceContract.target,
+      nftContract.target,
+    ],
+  });
 }
 
 // We recommend this pattern to be able to use async/await everywhere
