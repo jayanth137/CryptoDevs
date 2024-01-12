@@ -3,20 +3,20 @@ pragma solidity ^0.8.16;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./whitelist.sol";
+import "./Whitelist.sol";
 
 contract CryptoDevs is ERC721Enumerable, Ownable {
     uint256 public constant _price = 0.01 ether;
 
     uint256 public constant maxTokenIds = 20;
 
-    whitelist whitelisted;
+    Whitelist whitelisted;
 
     uint256 public reservedTokens;
     uint256 public reservedTokensClaimed = 0;
 
     constructor(address whitelistContract) ERC721("Crypto Devs", "CD") {
-        whitelisted = whitelist(whitelistContract);
+        whitelisted = Whitelist(whitelistContract);
         reservedTokens = whitelisted.maxWhitelistedAddresses();
     }
 
@@ -34,7 +34,6 @@ contract CryptoDevs is ERC721Enumerable, Ownable {
             require(balanceOf(msg.sender) == 0, "ALREADY_OWNED");
             reservedTokensClaimed += 1;
         } else {
-            // If user is not part of the whitelist, make sure they have sent enough ETH
             require(msg.value >= _price, "NOT_ENOUGH_ETHER");
         }
         uint256 tokenId = totalSupply();

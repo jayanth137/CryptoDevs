@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-contract whitelist {
+contract Whitelist {
     uint8 public maxWhitelistedAddresses;
 
     mapping(address => bool) public whitelistedAddress;
